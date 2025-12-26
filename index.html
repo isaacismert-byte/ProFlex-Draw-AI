@@ -34,11 +34,9 @@
       touch-action: none;
       -webkit-tap-highlight-color: transparent;
     }
-    .no-select {
-      user-select: none;
-    }
-    canvas {
-      display: block;
+    .modal-backdrop {
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
     }
     .no-scrollbar::-webkit-scrollbar {
       display: none;
@@ -47,56 +45,22 @@
       -ms-overflow-style: none;
       scrollbar-width: none;
     }
-    input, select, button {
-      touch-action: manipulation;
-    }
-    /* Better modal transition */
-    .modal-backdrop {
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-    }
-    /* Typography improvements for Audit */
-    .audit-content h1, .audit-content h2 {
-      font-weight: 800;
-      margin-top: 1.5rem;
-      margin-bottom: 0.5rem;
-      color: #1e293b;
-    }
-    .audit-content p {
-      margin-bottom: 1rem;
-    }
-    .audit-content ul {
-      list-style-type: disc;
-      padding-left: 1.5rem;
-      margin-bottom: 1rem;
-    }
-    .audit-content li {
-      margin-bottom: 0.5rem;
-    }
   </style>
-<script type="importmap">
+  <script type="importmap">
 {
   "imports": {
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
+    "react": "https://esm.sh/react@19.0.0",
+    "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
+    "@google/genai": "https://esm.sh/@google/genai@1.3.0",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "@google/genai": "https://esm.sh/@google/genai@^1.34.0"
+    "react/": "https://esm.sh/react@^19.2.3/"
   }
 }
 </script>
 </head>
 <body>
   <div id="root"></div>
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').then(registration => {
-          console.log('SW registered: ', registration);
-        }).catch(registrationError => {
-          console.log('SW registration failed: ', registrationError);
-        });
-      });
-    }
-  </script>
+  <!-- Automatically import the entry point index.tsx -->
+  <script type="module" src="./index.tsx"></script>
 </body>
 </html>
