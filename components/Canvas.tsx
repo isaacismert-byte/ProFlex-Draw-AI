@@ -49,7 +49,7 @@ const Canvas: React.FC<CanvasProps> = ({
     tapCount: 0
   });
 
-  // Reset piping source if the tool changes to selection
+  // Reset piping source if the tool changes
   useEffect(() => {
     if (selectedTool === 'select') {
       setTapPipingSource(null);
@@ -62,12 +62,14 @@ const Canvas: React.FC<CanvasProps> = ({
     if (!CTM) return { x: 0, y: 0 };
     
     let clientX, clientY;
-    if ('touches' in e && (e as TouchEvent).touches.length > 0) {
-      clientX = (e as TouchEvent).touches[0].clientX;
-      clientY = (e as TouchEvent).touches[0].clientY;
+    // Fix: Use 'any' to bridge React Synthetic events and Native events in the union
+    const ev = e as any;
+    if (ev.touches && ev.touches.length > 0) {
+      clientX = ev.touches[0].clientX;
+      clientY = ev.touches[0].clientY;
     } else {
-      clientX = (e as MouseEvent).clientX;
-      clientY = (e as MouseEvent).clientY;
+      clientX = ev.clientX;
+      clientY = ev.clientY;
     }
     
     return {
@@ -77,8 +79,6 @@ const Canvas: React.FC<CanvasProps> = ({
   };
 
   const handleInteractionStart = (e: React.MouseEvent | React.TouchEvent, id: string, isNode: boolean) => {
-    // Critical for mobile: prevent default to stop "ghost" clicks but don't break scroll if needed.
-    // However, on a design canvas, we usually want to prevent default.
     if (isMobile && e.cancelable) {
       e.preventDefault();
     }
@@ -99,8 +99,7 @@ const Canvas: React.FC<CanvasProps> = ({
     const coords = getCoordinates(e);
     setMousePos(coords);
 
-    // Threshold for deciding between tap and drag
-    const threshold = isMobile ? 35 : 8;
+    const threshold = isMobile ? 30 : 8;
     if (Math.abs(coords.x - dragStartPos.x) > threshold || Math.abs(coords.y - dragStartPos.y) > threshold) {
       setHasMovedSignificant(true);
     }
@@ -120,20 +119,21 @@ const Canvas: React.FC<CanvasProps> = ({
 
     let clientX = 0;
     let clientY = 0;
-    if ('changedTouches' in e && (e as TouchEvent).changedTouches.length > 0) {
-      clientX = (e as TouchEvent).changedTouches[0].clientX;
-      clientY = (e as TouchEvent).changedTouches[0].clientY;
+    // Fix: Use 'any' cast to avoid incompatible cast between React Synthetic and native events
+    const ev = e as any;
+    if (ev.changedTouches && ev.changedTouches.length > 0) {
+      clientX = ev.changedTouches[0].clientX;
+      clientY = ev.changedTouches[0].clientY;
     } else {
-      clientX = (e as MouseEvent).clientX;
-      clientY = (e as MouseEvent).clientY;
+      clientX = ev.clientX;
+      clientY = ev.clientY;
     }
 
     // PIPING TOOL LOGIC
     if (selectedTool === 'pipe') {
       let targetId = id;
 
-      // On mobile, if we dragged, the 'touchend' event target is still the source node.
-      // We use elementFromPoint to find what's actually under the finger.
+      // ElementFromPoint fix for mobile 'captured' touch targets
       if (isMobile && hasMovedSignificant) {
         const elementUnderFinger = document.elementFromPoint(clientX, clientY);
         const nodeG = elementUnderFinger?.closest('g[data-node-id]');
@@ -146,14 +146,14 @@ const Canvas: React.FC<CanvasProps> = ({
 
       if (isTargetNode) {
         if (!tapPipingSource) {
-          // STEP 1: Select source
+          // LOCK SOURCE
           setTapPipingSource(targetId);
           onSelect(null);
         } else if (tapPipingSource === targetId && !hasMovedSignificant) {
-          // Deselect if tapping same node
+          // UNLOCK IF SAME
           setTapPipingSource(null);
         } else if (tapPipingSource !== targetId) {
-          // STEP 2: Connect
+          // COMPLETE CONNECTION
           onAddEdge(tapPipingSource, targetId);
           setTapPipingSource(null);
         }
@@ -246,7 +246,7 @@ const Canvas: React.FC<CanvasProps> = ({
         onTouchEnd={(e) => handleInteractionEnd(e, node.id, true)}
         className="cursor-pointer group select-none touch-none"
       >
-        {/* Connection Guidance Rings */}
+        {/* Visual Cues for Connections */}
         {isPipeToolActive && (
           <g>
             <circle 
@@ -269,7 +269,7 @@ const Canvas: React.FC<CanvasProps> = ({
           </g>
         )}
 
-        {/* Massive Hit area for mobile fingers - transparent but part of the G group */}
+        {/* Large touch target */}
         <circle r={size + 45} fill="transparent" />
 
         {node.type === NodeType.JUNCTION ? (
@@ -278,9 +278,9 @@ const Canvas: React.FC<CanvasProps> = ({
           <rect x={-size} y={-size} width={size*2} height={size*2} rx="4" fill={color} stroke={isSelected ? "#6366f1" : "white"} strokeWidth={isSelected ? "4" : "2"} />
         )}
         
-        <text y={size + 18} textAnchor="middle" fontSize="11" fontWeight="800" className="fill-slate-900 pointer-events-none drop-shadow-sm">{node.name}</text>
+        <text y={size + 18} textAnchor="middle" fontSize="11" fontWeight="800" className="fill-slate-900 pointer-events-none drop-shadow-sm uppercase tracking-tighter">{node.name}</text>
         
-        {/* Delete UI in select mode */}
+        {/* Delete Indicator */}
         {selectedTool === 'select' && isSelected && (
           <g onClick={(e) => { e.stopPropagation(); onDeleteNode(node.id); }}>
             <circle cx={size + 14} cy={-size - 14} r="18" fill="#ef4444" className="shadow-lg" />
@@ -293,12 +293,6 @@ const Canvas: React.FC<CanvasProps> = ({
 
   const activePipeSourceId = tapPipingSource || (hasMovedSignificant ? pipingFrom : null);
   const sourceNode = nodes.find(n => n.id === activePipeSourceId);
-
-  const handleBackgroundAction = (e: React.MouseEvent | React.TouchEvent) => {
-    // If we tap the background, clear active connection states
-    if (selectedTool === 'select') onSelect(null);
-    setTapPipingSource(null);
-  };
 
   return (
     <div 
@@ -319,18 +313,18 @@ const Canvas: React.FC<CanvasProps> = ({
           </pattern>
         </defs>
 
-        {/* Background hit area */}
+        {/* Background interactions */}
         <rect 
           width="1000" height="1000" 
           fill="url(#grid)" 
-          onMouseDown={handleBackgroundAction}
-          onTouchStart={handleBackgroundAction}
+          onMouseDown={() => { if (selectedTool === 'select') onSelect(null); setTapPipingSource(null); }}
+          onTouchStart={() => { if (selectedTool === 'select') onSelect(null); setTapPipingSource(null); }}
         />
 
         {edges.map(renderPipe)}
         {nodes.map(renderNode)}
         
-        {/* Connection Preview Line */}
+        {/* Connection Preview Ghost Line */}
         {sourceNode && (
           <line 
             x1={sourceNode.x} 
@@ -347,10 +341,10 @@ const Canvas: React.FC<CanvasProps> = ({
         )}
       </svg>
 
-      {/* Instructional Overlays */}
+      {/* Floating Instructions */}
       {selectedTool === 'pipe' && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-indigo-600 text-white px-8 py-4 rounded-full text-[12px] font-black uppercase tracking-[0.2em] shadow-2xl border-2 border-indigo-400 whitespace-nowrap z-50 animate-bounce transition-all duration-300">
-          {tapPipingSource ? "Step 2: Tap Target Component" : "Step 1: Tap Starting Component"}
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-indigo-600 text-white px-8 py-4 rounded-full text-[12px] font-black uppercase tracking-[0.2em] shadow-2xl border-2 border-indigo-400 whitespace-nowrap z-50 animate-in slide-in-from-top duration-500">
+          {tapPipingSource ? "STEP 2: TAP DESTINATION" : "STEP 1: TAP SOURCE"}
         </div>
       )}
 

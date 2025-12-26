@@ -11,20 +11,29 @@ export async function auditSystem(nodes: AppNode[], edges: AppEdge[]) {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
   const prompt = `
-    Analyze this gas piping system layout.
+    Analyze this gas piping system layout for a professional engineering audit.
     Nodes: ${JSON.stringify(nodes)}
     Edges: ${JSON.stringify(edges)}
     
-    Provide a professional engineering audit. Identify any safety concerns, potential optimizations for pipe sizing, or common mistakes in residential gas plumbing based on this topology. Keep it concise.
+    STRUCTURE YOUR RESPONSE EXACTLY AS FOLLOWS:
+    1. Provide EXACTLY TWO sections.
+    2. Section 1 should be titled "Safety & Compliance Audit".
+    3. Section 2 should be titled "Optimization & Performance".
+    4. Provide EXACTLY 5 concise bullet points per section.
+    5. Do not include any intro or outro text.
+    
+    Base your audit on NFPA 54 / IFGC standards and common gas plumbing best practices.
   `;
 
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: prompt,
+      config: {
+        temperature: 0.4, // Lower temperature for more consistent structural adherence
+      }
     });
     
-    // Accessing the generated text via the .text property
     return response.text;
   } catch (error) {
     console.error("Gemini Audit Error:", error);

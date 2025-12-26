@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,14 +9,28 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/9355/9355644.png">
   <link rel="manifest" href="./manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        },
+      },
+    }
+  </script>
   <style>
     body {
       margin: 0;
       padding: 0;
       overflow: hidden;
       background-color: #f8fafc;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: 'Inter', sans-serif;
       touch-action: none;
       -webkit-tap-highlight-color: transparent;
     }
@@ -36,6 +49,29 @@
     }
     input, select, button {
       touch-action: manipulation;
+    }
+    /* Better modal transition */
+    .modal-backdrop {
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    /* Typography improvements for Audit */
+    .audit-content h1, .audit-content h2 {
+      font-weight: 800;
+      margin-top: 1.5rem;
+      margin-bottom: 0.5rem;
+      color: #1e293b;
+    }
+    .audit-content p {
+      margin-bottom: 1rem;
+    }
+    .audit-content ul {
+      list-style-type: disc;
+      padding-left: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    .audit-content li {
+      margin-bottom: 0.5rem;
     }
   </style>
 <script type="importmap">
